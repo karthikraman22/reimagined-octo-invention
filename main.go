@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"achuala.in/payscape/model"
+	"achuala.in/ledger/model"
 	"github.com/gin-gonic/gin"
 )
 
