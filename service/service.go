@@ -9,10 +9,8 @@ import (
 	"syscall"
 	"time"
 
+	"achuala.in/ledger/config"
 	"github.com/gin-gonic/gin"
-	"github.com/knadh/koanf"
-	"github.com/knadh/koanf/parsers/yaml"
-	"github.com/knadh/koanf/providers/file"
 )
 
 type Service struct {
@@ -22,17 +20,13 @@ type Service struct {
 	server  *http.Server
 }
 
-func NewService(name string) Service {
-	// Global koanf instance. Use "." as the key path delimiter. This can be "/" or any character.
-	var conf = koanf.New(".")
+func NewService(cfg *config.Config) Service {
 
-	conf.Load(file.Provider("conf.yaml"), yaml.Parser())
-
-	if conf.String("profile") == "production" {
+	if cfg.String("profile") == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	port := conf.Int("port")
+	port := cfg.Int("port")
 
 	//Start the default gin server
 	router := gin.Default()
@@ -49,7 +43,7 @@ func NewService(name string) Service {
 		WriteTimeout: 10 * time.Second,
 	}
 
-	return Service{name: name, address: ":10001", Router: router, server: srv}
+	return Service{name: cfg.String("application_name"), address: ":10001", Router: router, server: srv}
 }
 
 func (s Service) Run() {
