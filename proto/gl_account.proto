@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+option go_package = "achuala.in/ledger/glaccount;glaccount";
+
+message GeneralLedgerAccount {
+    string id = 1;
+    string parentId = 2;
+    string name = 3;
+    string glcode = 4;
+    string type = 5;
+    string description = 6;
+    bool disabled = 7;
+    bool allowManualEntries = 8;
+    string usage = 9;
+    repeated GeneralLedgerAccount children = 10;
+}
+
+message FindGLAByIdRq {
+    string id = 1;
+}
+
+message FindGLAByIdRs {
+    string status = 1;
+    GeneralLedgerAccount glaccount = 2;
+}
+
+message GLAccountEntry {
+    string id = 1;
+    string reversalId = 2;
+    string transactionDate = 3;
+    string gl_account_id = 4;
+    
+}

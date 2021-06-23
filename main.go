@@ -1,56 +1,25 @@
 package main
 
 import (
-	"context"
-	"log"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
-
-	"achuala.in/ledger/model"
-	"github.com/gin-gonic/gin"
+	"achuala.in/ledger/broker"
+	"achuala.in/ledger/glaccount"
+	"achuala.in/ledger/service"
 )
 
 func main() {
-	// Create Server and Route Handlers
-	r := gin.Default()
 
-	modelRoutes := model.Routes{RouteEngine: r}
-	modelRoutes.BuildRoutes()
+	s := service.NewService("ledger")
 
-	srv := &http.Server{
-		Handler:      r,
-		Addr:         ":8080",
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-	}
+	nc := broker.NewBroker("localhost:4222")
+	nc.Connect()
+	defer nc.Disconnect()
 
-	// Start Server
-	go func() {
-		log.Println("Starting Server")
-		if err := srv.ListenAndServe(); err != nil {
-			log.Fatal(err)
-		}
-	}()
+	glaccount.NewGLAccountResource(s.Router, nc)
 
-	// Graceful Shutdown
-	waitForShutdown(srv)
-}
+	// Regiser the subscriber
+	p := glaccount.NewGLAccountProcessor(nc)
+	p.Init()
 
-func waitForShutdown(srv *http.Server) {
-	interruptChan := make(chan os.Signal, 1)
-	signal.Notify(interruptChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	s.Run()
 
-	// Block until we receive our signal.
-	<-interruptChan
-
-	// Create a deadline to wait for.
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	srv.Shutdown(ctx)
-
-	log.Println("Shutting down")
-	os.Exit(0)
 }

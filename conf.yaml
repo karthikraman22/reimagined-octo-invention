@@ -1,0 +1,4 @@
+application_name: ledger
+port: 10001
+proile: debug #release|debug
+version: 0.1
