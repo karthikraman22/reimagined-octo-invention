@@ -57,6 +57,9 @@ func (nc *NatsClient) Connect() error {
 }
 
 func (nc *NatsClient) Disconnect() {
+	if !nc.connected {
+		return
+	}
 	nc.conn.Flush()
 	nc.conn.Drain()
 	for _, s := range nc.subs {

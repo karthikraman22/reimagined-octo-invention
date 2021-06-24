@@ -8,12 +8,13 @@ import (
 )
 
 type GLAccountResource struct {
-	glaHandler *GLAccountHandler
+	glaHandler     *GLAccountHandler
+	glaJrnlHandler *GLAccountJournalHandler
 }
 
 func NewGLAccountResource(router *gin.Engine, nc *broker.NatsClient) GLAccountResource {
 	handler := NewGLAccountHandler(nc)
-	resource := GLAccountResource{glaHandler: handler}
+	resource := GLAccountResource{glaHandler: handler, glaJrnlHandler: &GLAccountJournalHandler{nc: nc}}
 	resource.setupGLAccountRoutes(router)
 	return resource
 }
@@ -33,6 +34,21 @@ func (r GLAccountResource) addV1Routes(rg *gin.RouterGroup) {
 			c.JSON(http.StatusInternalServerError, err)
 		} else {
 			c.JSON(http.StatusOK, gla)
+		}
+	})
+
+	gl.POST("/journal/new", func(c *gin.Context) {
+		payLoad := &NewGLAcctJournalEntry{}
+		if err := c.BindJSON(payLoad); err != nil {
+			c.AbortWithStatus(400)
+			return
+		}
+		rq := &PostNewGLAcctJrnlEntryRq{Entry: payLoad}
+		rs, err := r.glaJrnlHandler.PostNewGLJournalEntry(rq)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+		} else {
+			c.JSON(http.StatusOK, rs)
 		}
 	})
 }
