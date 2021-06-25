@@ -13,11 +13,11 @@ import (
 
 func main() {
 
-	cfg := config.NewConfig("conf.yaml")
+	cfg := config.NewConfig("conf.yaml", "GLACCT_")
 
 	s := service.NewService(cfg)
 
-	nc := broker.NewBroker(cfg.String("nats_hosts"))
+	nc := broker.NewBroker(cfg.String("nats.hosts"))
 	nc.Connect()
 	defer nc.Disconnect()
 
@@ -29,9 +29,9 @@ func main() {
 
 	glaccount.NewGLAccountResource(s.Router, nc)
 
-	// Regiser the subscriber
-	p := glaccount.NewGLAccountProcessor(nc)
-	p.Init()
+	// Regiser the subscribers
+	glaccount.NewGLAccountProcessor(nc, db).Init()
+	glaccount.NewGLAccountJournalProcessor(nc, db).Init()
 
 	s.Run()
 

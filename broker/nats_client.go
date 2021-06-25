@@ -32,7 +32,7 @@ func (nc *NatsClient) Connect() error {
 	if nc.connected {
 		return nil
 	}
-
+	log.Printf("connecting to nats hosts at : %s", nc.addrs)
 	// Connect Options.
 	opts := []nats.Option{nats.Name("NATS Client")}
 	opts = setupConnOptions(opts)
@@ -63,7 +63,7 @@ func (nc *NatsClient) Disconnect() {
 	nc.conn.Flush()
 	nc.conn.Drain()
 	for _, s := range nc.subs {
-		defer log.Printf("Unsubscribed from : %s", s.Subject)
+		defer log.Printf("unsubscribed from : %s", s.Subject)
 		s.Unsubscribe()
 	}
 	nc.conn.Close()

@@ -1,7 +1,7 @@
 package glaccount
 
 import (
-	"log"
+	"database/sql"
 
 	"achuala.in/ledger/broker"
 	"github.com/google/uuid"
@@ -11,22 +11,22 @@ import (
 
 type GLAccountProcessor struct {
 	nc *broker.NatsClient
+	db *sql.DB
 }
 
-func NewGLAccountProcessor(nc *broker.NatsClient) *GLAccountProcessor {
-	return &GLAccountProcessor{nc: nc}
+func NewGLAccountProcessor(nc *broker.NatsClient, db *sql.DB) *GLAccountProcessor {
+	return &GLAccountProcessor{nc: nc, db: db}
 }
 
 func (p *GLAccountProcessor) Init() {
-	p.RegisterHandler("glaccount.GetGLAccountById", "glacct-wrkr", getGLAccountById)
+	p.RegisterHandler("glacct.getglaccountbyid", "glacct-wrkr", p.getGLAccountById)
 }
 
 func (p *GLAccountProcessor) RegisterHandler(subject string, groupName string, h func([]byte) (protoreflect.ProtoMessage, error)) error {
-	defer log.Printf("Subscribed to : %s", subject)
 	return p.nc.Subscribe(subject, groupName, h)
 }
 
-func getGLAccountById(reqPayLoad []byte) (protoreflect.ProtoMessage, error) {
+func (p *GLAccountProcessor) getGLAccountById(reqPayLoad []byte) (protoreflect.ProtoMessage, error) {
 	req := &FindGLAByIdRq{}
 	if err := proto.Unmarshal(reqPayLoad, req); err != nil {
 		return nil, err

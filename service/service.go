@@ -43,7 +43,7 @@ func NewService(cfg *config.Config) Service {
 		WriteTimeout: 10 * time.Second,
 	}
 
-	return Service{name: cfg.String("application_name"), address: ":10001", Router: router, server: srv}
+	return Service{name: cfg.String("application.name"), address: srv.Addr, Router: router, server: srv}
 }
 
 func (s Service) Run() {

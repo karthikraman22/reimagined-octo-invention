@@ -1,8 +1,10 @@
-application_name: ledger
+application:
+  name: ledger
 port: 10001
 proile: debug #release|debug
 version: 0.1
-nats_hosts: "localhost:4222"
+nats:
+  hosts: "localhost:4222"
 db:
   uri: "postgresql://root@localhost:26257/coredb?sslmode=disable"
   driver: "postgres"

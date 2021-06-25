@@ -8,7 +8,7 @@ type GLAccountJournalHandler struct {
 
 func (h *GLAccountJournalHandler) PostNewGLJournalEntry(rq *PostNewGLAcctJrnlEntryRq) (*PostNewGLAcctJrnlEntryRs, error) {
 	rs := &PostNewGLAcctJrnlEntryRs{}
-	if err := h.nc.Send("glaccount.PostNewGLAcctJrnlEntry", rq, rs); err != nil {
+	if err := h.nc.Send("glacct.jrnl.postnewgljournalenry", rq, rs); err != nil {
 		return nil, err
 	}
 	return rs, nil
