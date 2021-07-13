@@ -19,7 +19,7 @@ func NewGLAccountJournalProcessor(nc *broker.NatsClient, db *sql.DB) *GLAccountJ
 }
 
 func (p *GLAccountJournalProcessor) Init() {
-	p.RegisterHandler("glacct.jrnl.postnewgljournalenry", "glacct-wrkr", p.postNewGLJournalEntry)
+	p.RegisterHandler("glacct.jrnl.postnewgljournalentry", "glacct-wrkr", p.postNewGLJournalEntry)
 }
 
 func (p *GLAccountJournalProcessor) RegisterHandler(subject string, groupName string, h func([]byte) (protoreflect.ProtoMessage, error)) error {
