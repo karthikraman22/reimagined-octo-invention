@@ -1,20 +1,21 @@
-package glaccount
+package api
 
 import (
 	"net/http"
 
 	"achuala.in/ledger/broker"
+	"achuala.in/ledger/glaccount"
+	"achuala.in/ledger/glaccount/handler"
 	"github.com/gin-gonic/gin"
 )
 
 type GLAccountResource struct {
-	glaHandler     *GLAccountHandler
-	glaJrnlHandler *GLAccountJournalHandler
+	hAccount *handler.AccountHandler
+	hJournal *handler.JournalHandler
 }
 
 func NewGLAccountResource(router *gin.Engine, nc *broker.NatsClient) GLAccountResource {
-	handler := NewGLAccountHandler(nc)
-	resource := GLAccountResource{glaHandler: handler, glaJrnlHandler: &GLAccountJournalHandler{nc: nc}}
+	resource := GLAccountResource{hAccount: handler.NewAccountHandler(nc), hJournal: handler.NewJournalHandler(nc)}
 	resource.setupGLAccountRoutes(router)
 	return resource
 }
@@ -29,7 +30,7 @@ func (r GLAccountResource) addV1Routes(rg *gin.RouterGroup) {
 
 	gl.GET("/:id", func(c *gin.Context) {
 		id := c.Param("id")
-		gla, err := r.glaHandler.GetGLAccountById(&FindGLAByIdRq{Id: id})
+		gla, err := r.hAccount.GetGLAccountById(&glaccount.GetGLAByIdRq{Id: id})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err)
 		} else {
@@ -38,13 +39,13 @@ func (r GLAccountResource) addV1Routes(rg *gin.RouterGroup) {
 	})
 
 	gl.POST("/journal/new", func(c *gin.Context) {
-		payLoad := &NewGLAcctJournalEntry{}
+		payLoad := &glaccount.NewJournalEntry{}
 		if err := c.BindJSON(payLoad); err != nil {
 			c.AbortWithStatus(400)
 			return
 		}
-		rq := &PostNewGLAcctJrnlEntryRq{Entry: payLoad}
-		rs, err := r.glaJrnlHandler.PostNewGLJournalEntry(rq)
+		rq := &glaccount.PostNewJournalEntryRq{Entry: payLoad}
+		rs, err := r.hJournal.PostNewGLJournalEntry(rq)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err)
 		} else {

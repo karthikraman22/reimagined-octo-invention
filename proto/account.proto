@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+option go_package = "achuala.in/ledger/glaccount;glaccount";
+
+message GeneralLedgerAccount {
+    string id = 1;
+    string parentId = 2;
+    string organizationId = 3;
+    string name = 4;
+    string glcode = 5;
+    string type = 6;
+    string description = 7;
+    bool disabled = 8;
+    bool allowManualEntries = 9;
+    string usage = 10;
+}
+
+message GetGLAByIdRq {
+    string id = 1;
+}
+
+message GetGLAByIdRs {
+    string status = 1;
+    GeneralLedgerAccount glaccount = 2;
+}
+
+
+// request parameters for method get_accounts_by_organization
+message GetGLAcctsByOrgRq {
+    // organization unique identifier
+    string organizationId = 1;
+}
+
+// response parameters for method get_accounts_by_organization
+message GetGLAcctsByOrgRs {
+    string status = 1;
+    repeated GeneralLedgerAccount glAccounts = 2;
+}

@@ -6,7 +6,8 @@ import (
 
 	"achuala.in/ledger/broker"
 	"achuala.in/ledger/config"
-	"achuala.in/ledger/glaccount"
+	"achuala.in/ledger/glaccount/api"
+	"achuala.in/ledger/glaccount/processor"
 	"achuala.in/ledger/service"
 	_ "github.com/lib/pq"
 )
@@ -27,11 +28,11 @@ func main() {
 	}
 	defer db.Close()
 
-	glaccount.NewGLAccountResource(s.Router, nc)
+	api.NewGLAccountResource(s.Router, nc)
 
 	// Regiser the subscribers
-	glaccount.NewGLAccountProcessor(nc, db).Init()
-	glaccount.NewGLAccountJournalProcessor(nc, db).Init()
+	processor.NewAccountProcessor(nc, db).Init()
+	processor.NewJournalProcessor(nc, db).Init()
 
 	s.Run()
 

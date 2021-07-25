@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option go_package = "achuala.in/ledger/glaccount;glaccount";
+
+message Organization  {
+    string id = 1;
+    string code = 2;
+    string name = 3;
+}
+
+message CreateNewOrgRq {
+    Organization orgDetails = 1;
+}
+
+message CreateNewOrgRs {
+    string status = 1;
+    string orgId = 2;
+}
+
+message GetOrgByIdRq {
+    string id = 1;
+}
+
+message GetOrgByIdRs {
+    string status = 1;
+    Organization organization = 2;
+}
