@@ -2,27 +2,25 @@ syntax = "proto3";
 
 option go_package = "achuala.in/ledger/glaccount;glaccount";
 
-message AcctInfo {
-    string acctId = 1;
-    string description = 2;
-    double amount = 3;
-}
-
 message JournalEntry {
-    string transactionId = 1;
-    string externalRef = 2;
-    string entryDate = 3;
-    AcctInfo debitInfo = 4;
-    AcctInfo creditInfo = 5;
-    map<string, string> tags = 6; 
+    string id = 1;
+    string transactionId = 2;
+    string externalRef = 3;
+    string entryDate = 4;
+    string accountId = 5;
+    string notes = 6;
+    double amount = 7;
+    string type = 8;
+    string reversalId = 9;
+    bool manualEntry = 10;
+    string signature = 11;    
+    map<string, string> tags = 12; 
 }
 
 message PostJournalEntryRq {
-    JournalEntry entry = 1;
-    map<string, string> tags = 2;
+    repeated JournalEntry entries = 1;
 }
 
 message PostJournalEntryRs {
     string status = 1;
-    string id = 2;
 }

@@ -4,15 +4,15 @@ option go_package = "achuala.in/ledger/glaccount;glaccount";
 
 message GeneralLedgerAccount {
     string id = 1;
-    string parentId = 2;
-    string organizationId = 3;
-    string name = 4;
-    string glcode = 5;
+    string code = 2;
+    string parentId = 3;
+    string organizationId = 4;
+    string description = 5;
     string type = 6;
-    string description = 7;
-    bool disabled = 8;
-    bool allowManualEntries = 9;
-    string usage = 10;
+    bool disabled = 7;
+    bool allowManualEntries = 8;
+    string usage = 9;
+    map<string, string> tags = 10;
 }
 
 message GetGLAByIdRq {
@@ -21,7 +21,7 @@ message GetGLAByIdRq {
 
 message GetGLAByIdRs {
     string status = 1;
-    GeneralLedgerAccount glaccount = 2;
+    GeneralLedgerAccount acctDetails = 2;
 }
 
 message CreateNewAcctRq {
@@ -30,7 +30,7 @@ message CreateNewAcctRq {
 
 message CreateNewAcctRs {
     string status = 1;
-    string acctId = 2;
+    string accountId = 2;
 }
 
 // request parameters for method get_accounts_by_organization

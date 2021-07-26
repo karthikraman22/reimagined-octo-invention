@@ -35,12 +35,11 @@ func (r GLAccountResource) addV1Routes(rg *gin.RouterGroup) {
 	r.addOrgRoutesV1(gl)
 
 	gl.POST("/journal/post", func(c *gin.Context) {
-		payLoad := &glaccount.JournalEntry{}
-		if err := c.BindJSON(payLoad); err != nil {
-			c.AbortWithStatus(400)
+		rq := &glaccount.PostJournalEntryRq{}
+		if err := c.BindJSON(rq); err != nil {
+			c.AbortWithStatusJSON(400, err)
 			return
 		}
-		rq := &glaccount.PostJournalEntryRq{Entry: payLoad}
 		rs, err := r.hJournal.PostEntry(rq)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err)
@@ -54,7 +53,7 @@ func (r GLAccountResource) addAccountRoutesV1(rg *gin.RouterGroup) {
 	rg.POST("/new", func(c *gin.Context) {
 		rq := &glaccount.CreateNewAcctRq{}
 		if err := c.BindJSON(rq); err != nil {
-			c.AbortWithStatus(400)
+			c.AbortWithStatusJSON(400, err)
 			return
 		}
 		rs, err := r.hAccount.CreateNewAccount(rq)
