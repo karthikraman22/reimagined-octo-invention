@@ -24,6 +24,14 @@ message GetGLAByIdRs {
     GeneralLedgerAccount glaccount = 2;
 }
 
+message CreateNewAcctRq {
+    GeneralLedgerAccount acctDetails = 1;
+}
+
+message CreateNewAcctRs {
+    string status = 1;
+    string acctId = 2;
+}
 
 // request parameters for method get_accounts_by_organization
 message GetGLAcctsByOrgRq {

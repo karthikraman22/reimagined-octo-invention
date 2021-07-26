@@ -105,31 +105,22 @@ func (nc *NatsClient) Send(subject string, request protoreflect.ProtoMessage, re
 	return nil
 }
 
-func (nc *NatsClient) Subscribe(subject string, groupName string, h func([]byte) (protoreflect.ProtoMessage, error)) error {
+func (nc *NatsClient) Subscribe(subject string, groupName string, h func([]byte) protoreflect.ProtoMessage) error {
 
 	sub, err := nc.conn.QueueSubscribe(subject, groupName, func(m *nats.Msg) {
-		go func() {
-			response, err := h(m.Data)
-			if err == nil {
-				payload, err := proto.Marshal(response)
-				if err == nil {
-					if err = m.Respond(payload); err != nil {
-						// Log the error, not much can be done here
-						log.Printf("Eror in sending response %v", err)
-					}
-				} else {
-					// Log the error, not much can be done here
-					log.Printf("Eror in marshaling response %v", err)
-				}
-			} else {
-				// Log the error, not much can be done here
-				log.Printf("Eror in handling request %v", err)
-
-			}
-		}()
+		response := h(m.Data)
+		payload, err := proto.Marshal(response)
+		if err != nil {
+			// Log the error, not much can be done here
+			log.Printf("error in marshaling response %v", err)
+		}
+		if err = m.Respond(payload); err != nil {
+			// Log the error, not much can be done here
+			log.Printf("error in sending response %v", err)
+		}
 	})
 	if err != nil {
-		log.Printf("Unable to subscribe to subject %s - %v", subject, err)
+		log.Printf("unable to subscribe to subject %s - %v", subject, err)
 		return err
 	} else {
 		nc.subs = append(nc.subs, sub)

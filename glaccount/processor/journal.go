@@ -16,23 +16,41 @@ type JournalProcessor struct {
 }
 
 func NewJournalProcessor(nc *broker.NatsClient, db *sql.DB) *JournalProcessor {
-	return &JournalProcessor{nc: nc, db: db}
+	p := &JournalProcessor{nc: nc, db: db}
+	p.RegisterHandlers()
+	return p
 }
 
-func (p *JournalProcessor) Init() {
-	p.RegisterHandler("glacct.jrnl.postnewgljournalentry", "glacct-wrkr", p.postNewGLJournalEntry)
+func (p *JournalProcessor) RegisterHandlers() {
+	p.RegisterHandler("glacct.jrnl.postentry", "glacct-wrkr", p.postEntry)
 }
 
-func (p *JournalProcessor) RegisterHandler(subject string, groupName string, h func([]byte) (protoreflect.ProtoMessage, error)) error {
+func (p *JournalProcessor) RegisterHandler(subject string, groupName string, h func([]byte) protoreflect.ProtoMessage) error {
 	return p.nc.Subscribe(subject, groupName, h)
 }
 
-func (p *JournalProcessor) postNewGLJournalEntry(reqPayLoad []byte) (protoreflect.ProtoMessage, error) {
-	rq := &glaccount.PostNewJournalEntryRq{}
+func (p *JournalProcessor) postEntry(reqPayLoad []byte) protoreflect.ProtoMessage {
+	rq := &glaccount.PostJournalEntryRq{}
+	rs := &glaccount.PostJournalEntryRs{}
 	if err := proto.Unmarshal(reqPayLoad, rq); err != nil {
-		return nil, err
+		rs.Status = err.Error()
+		return rs
 	}
-
-	rs := &glaccount.PostNewJournalEntryRs{Status: "0", Id: uuid.NewString()}
-	return rs, nil
+	p.db.Begin()
+	sql := `INSERT INTO gl_journal`
+	stmt, err := p.db.Prepare(sql)
+	if err != nil {
+		rs.Status = err.Error()
+		return rs
+	}
+	defer stmt.Close()
+	newId, _ := uuid.NewUUID()
+	_, err = stmt.Exec()
+	if err != nil {
+		rs.Status = err.Error()
+		return rs
+	}
+	rs.Status = "0"
+	rs.Id = newId.String()
+	return rs
 }

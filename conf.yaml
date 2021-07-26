@@ -6,5 +6,5 @@ version: 0.1
 nats:
   hosts: "localhost:4222"
 db:
-  uri: "postgresql://root@localhost:26257/coredb?sslmode=disable"
+  uri: "postgresql://root@localhost:26257/ledger?sslmode=disable"
   driver: "postgres"

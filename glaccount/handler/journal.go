@@ -13,9 +13,9 @@ func NewJournalHandler(nc *broker.NatsClient) *JournalHandler {
 	return &JournalHandler{nc: nc}
 }
 
-func (h *JournalHandler) PostNewGLJournalEntry(rq *glaccount.PostNewJournalEntryRq) (*glaccount.PostNewJournalEntryRs, error) {
-	rs := &glaccount.PostNewJournalEntryRs{}
-	if err := h.nc.Send("glacct.jrnl.postnewgljournalentry", rq, rs); err != nil {
+func (h *JournalHandler) PostEntry(rq *glaccount.PostJournalEntryRq) (*glaccount.PostJournalEntryRs, error) {
+	rs := &glaccount.PostJournalEntryRs{}
+	if err := h.nc.Send("glacct.jrnl.postentry", rq, rs); err != nil {
 		return nil, err
 	}
 	return rs, nil

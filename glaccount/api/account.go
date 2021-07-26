@@ -10,12 +10,15 @@ import (
 )
 
 type GLAccountResource struct {
-	hAccount *handler.AccountHandler
-	hJournal *handler.JournalHandler
+	hAccount      *handler.AccountHandler
+	hJournal      *handler.JournalHandler
+	hOrganization *handler.OrganizationtHandler
 }
 
 func NewGLAccountResource(router *gin.Engine, nc *broker.NatsClient) GLAccountResource {
-	resource := GLAccountResource{hAccount: handler.NewAccountHandler(nc), hJournal: handler.NewJournalHandler(nc)}
+	resource := GLAccountResource{hAccount: handler.NewAccountHandler(nc),
+		hJournal:      handler.NewJournalHandler(nc),
+		hOrganization: handler.NewOrganizationtHandler(nc)}
 	resource.setupGLAccountRoutes(router)
 	return resource
 }
@@ -28,9 +31,43 @@ func (r GLAccountResource) setupGLAccountRoutes(router *gin.Engine) {
 func (r GLAccountResource) addV1Routes(rg *gin.RouterGroup) {
 	gl := rg.Group("/glaccount")
 
-	gl.GET("/:id", func(c *gin.Context) {
+	r.addAccountRoutesV1(gl)
+	r.addOrgRoutesV1(gl)
+
+	gl.POST("/journal/post", func(c *gin.Context) {
+		payLoad := &glaccount.JournalEntry{}
+		if err := c.BindJSON(payLoad); err != nil {
+			c.AbortWithStatus(400)
+			return
+		}
+		rq := &glaccount.PostJournalEntryRq{Entry: payLoad}
+		rs, err := r.hJournal.PostEntry(rq)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+		} else {
+			c.JSON(http.StatusOK, rs)
+		}
+	})
+}
+
+func (r GLAccountResource) addAccountRoutesV1(rg *gin.RouterGroup) {
+	rg.POST("/new", func(c *gin.Context) {
+		rq := &glaccount.CreateNewAcctRq{}
+		if err := c.BindJSON(rq); err != nil {
+			c.AbortWithStatus(400)
+			return
+		}
+		rs, err := r.hAccount.CreateNewAccount(rq)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, err)
+		} else {
+			c.JSON(http.StatusOK, rs)
+		}
+	})
+
+	rg.GET("/:id", func(c *gin.Context) {
 		id := c.Param("id")
-		gla, err := r.hAccount.GetGLAccountById(&glaccount.GetGLAByIdRq{Id: id})
+		gla, err := r.hAccount.GetAccountById(&glaccount.GetGLAByIdRq{Id: id})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err)
 		} else {
@@ -38,14 +75,16 @@ func (r GLAccountResource) addV1Routes(rg *gin.RouterGroup) {
 		}
 	})
 
-	gl.POST("/journal/new", func(c *gin.Context) {
-		payLoad := &glaccount.NewJournalEntry{}
-		if err := c.BindJSON(payLoad); err != nil {
+}
+
+func (r GLAccountResource) addOrgRoutesV1(rg *gin.RouterGroup) {
+	rg.POST("/org/new", func(c *gin.Context) {
+		rq := &glaccount.CreateNewOrgRq{}
+		if err := c.BindJSON(rq); err != nil {
 			c.AbortWithStatus(400)
 			return
 		}
-		rq := &glaccount.PostNewJournalEntryRq{Entry: payLoad}
-		rs, err := r.hJournal.PostNewGLJournalEntry(rq)
+		rs, err := r.hOrganization.CreateOrg(rq)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err)
 		} else {

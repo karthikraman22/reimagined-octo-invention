@@ -31,8 +31,9 @@ func main() {
 	api.NewGLAccountResource(s.Router, nc)
 
 	// Regiser the subscribers
-	processor.NewAccountProcessor(nc, db).Init()
-	processor.NewJournalProcessor(nc, db).Init()
+	processor.NewAccountProcessor(nc, db)
+	processor.NewJournalProcessor(nc, db)
+	processor.NewOrganizationProcessor(nc, db)
 
 	s.Run()
 

@@ -8,7 +8,7 @@ message AcctInfo {
     double amount = 3;
 }
 
-message NewJournalEntry {
+message JournalEntry {
     string transactionId = 1;
     string externalRef = 2;
     string entryDate = 3;
@@ -17,21 +17,12 @@ message NewJournalEntry {
     map<string, string> tags = 6; 
 }
 
-message PostNewJournalEntryRq {
-    NewJournalEntry entry = 1;
+message PostJournalEntryRq {
+    JournalEntry entry = 1;
     map<string, string> tags = 2;
 }
 
-message PostNewJournalEntryRs {
+message PostJournalEntryRs {
     string status = 1;
     string id = 2;
-}
-
-message JournalEntry {
-    string id = 1;
-    string externalRef = 2;
-    string reversalId = 3;
-    string entryDate = 4;
-    string glAccountId = 5;
-   
 }
