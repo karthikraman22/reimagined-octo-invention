@@ -14,7 +14,7 @@ import (
 
 func main() {
 
-	cfg := config.NewConfig("conf.yaml", "GLACCT_")
+	cfg := config.NewConfig("conf.yaml", "LEDGER_")
 
 	s := service.NewService(cfg)
 
@@ -29,6 +29,7 @@ func main() {
 	defer db.Close()
 
 	api.NewGLAccountResource(s.Router, nc)
+	api.NewHealthProbe(s.Router, nc)
 
 	// Regiser the subscribers
 	processor.NewAccountProcessor(nc, db)

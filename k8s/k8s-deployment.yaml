@@ -2,35 +2,43 @@
 apiVersion: apps/v1
 kind: Deployment                 # Type of Kubernetes resource
 metadata:
-  name: payscape-api           # Name of the Kubernetes resource
+  name: ledger          # Name of the Kubernetes resource
 spec:
-  replicas: 3                    # Number of pods to run at any given time
+  replicas: 1                    # Number of pods to run at any given time
   selector:
     matchLabels:
-      app: payscape-api        # This deployment applies to any Pods matching the specified label
+      app: ledger        # This deployment applies to any Pods matching the specified label
   template:                      # This deployment will create a set of pods using the configurations in this template
     metadata:
       labels:                    # The labels that will be applied to all of the pods in this deployment
-        app: payscape-api
+        app: ledger
     spec:                        # Spec for the container which will run in the Pod
+      volumes:
+        - name: ledger-config-volume
+          configMap: 
+            name: ledger-config
       containers:
-      - name: payscape-api
-        image: achuala/payscape-api:1.0.0 
-        imagePullPolicy: Always
+      - name: ledger
+        image: achuala.in/ledger:latest
+        imagePullPolicy: IfNotPresent
         ports:
-          - containerPort: 8080  # Should match the port number that the Go application listens on
+          - containerPort: 10001  # Should match the port number that the Go application listens on
+        volumeMounts:
+          - name: ledger-config-volume
+            mountPath: /conf.yaml
+            subPath: conf.yaml
         livenessProbe:           # To check the health of the Pod
           httpGet:
-            path: /health
-            port: 8080
+            path: /health/liveness
+            port: 10001
             scheme: HTTP
           initialDelaySeconds: 5
           periodSeconds: 15
           timeoutSeconds: 5
         readinessProbe:          # To check if the Pod is ready or not
           httpGet:
-            path: /readiness
-            port: 8080
+            path: /health/readiness
+            port: 10001
             scheme: HTTP
           initialDelaySeconds: 5
           timeoutSeconds: 1  
@@ -38,12 +46,12 @@ spec:
 apiVersion: v1
 kind: Service                    # Type of kubernetes resource
 metadata:
-  name: payscape-api-service   # Name of the resource
+  name: ledger-service   # Name of the resource
 spec:
   type: NodePort                 # If you're deploying on cloud, you can use `type: LoadBalancer`. It will automatically provision a load balancer with the cloud provider that will route traffic to your application.
   ports:                         # Take incoming HTTP requests on port 9090 and forward them to the targetPort of 8080
   - name: http
-    port: 9090
-    targetPort: 8080
+    port: 10001
+    targetPort: 10001
   selector:
-    app: payscape-api          # Map any pod with name payscape-api to this service
+    app: ledger          # Map any pod with name payscape-api to this service

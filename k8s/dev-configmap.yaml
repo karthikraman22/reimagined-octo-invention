@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ledger-config
+data: 
+  conf.yaml: |-
+    application:
+      name: ledger
+    port: 10001
+    profile: debug #release|debug
+    version: 0.1
+    nats:
+      hosts: "nats://nats:nats@nats-client.default.svc.cluster.local:4222"
+    db:
+      uri: "postgresql://postgres:postgres@postgres-postgresql.default.svc.cluster.local:5432/ledger?sslmode=disable"
+      driver: "postgres"
+      
