@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -11,6 +12,7 @@ import (
 
 	"achuala.in/ledger/broker"
 	"achuala.in/ledger/glaccount"
+	"achuala.in/ledger/repository"
 	"achuala.in/ledger/util"
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
@@ -18,12 +20,14 @@ import (
 )
 
 type JournalProcessor struct {
-	nc *broker.NatsClient
-	db *sql.DB
+	nc       *broker.NatsClient
+	db       *sql.DB
+	acctRepo *repository.AccountRepository
 }
 
 func NewJournalProcessor(nc *broker.NatsClient, db *sql.DB) *JournalProcessor {
-	p := &JournalProcessor{nc: nc, db: db}
+	ar := repository.NewAccountRepository(db)
+	p := &JournalProcessor{nc: nc, db: db, acctRepo: ar}
 	p.RegisterHandlers()
 	return p
 }
@@ -44,43 +48,30 @@ func (p *JournalProcessor) postEntry(reqPayLoad []byte) protoreflect.ProtoMessag
 		return rs
 	}
 
-	_, err := p.validateAccounts(rq.Entries)
-	if err != nil {
+	debtors := rq.Entry.Debtors
+	creditors := rq.Entry.Creditors
+
+	if err := validateSumTotal(debtors, creditors); err != nil {
 		rs.Status = err.Error()
 		return rs
 	}
 
-	sql := `INSERT INTO gl_journal(id,tranaction_id,ext_ref,account_id,entry_date, amount,entry_type, notes,
+	sql := `INSERT INTO gl_journal(id,tranaction_id,ext_ref,account_number,entry_date, amount,entry_type, notes,
 		reversal_id, manual_entry, tsignature, tags) VALUES %s `
 	valueStrings := []string{}
 	valueArgs := []interface{}{}
 	i := 0
-	for _, e := range rq.Entries {
-		id, _ := uuid.NewUUID()
-		acctId := util.ToUuid(e.AccountId)
-		reversalId := util.ToUuid(e.ReversalId)
-		signature := sha256.Sum256([]byte(fmt.Sprintf("%s.%s.%s.%g.%s", id, e.AccountId, e.TransactionId, e.Amount, e.Type)))
-		tagsJson, _ := json.Marshal(e.Tags)
-		entryDate, _ := time.Parse("MM-DD-YYYY", e.EntryDate)
-		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d,$%d, $%d, $%d,$%d, $%d, $%d,$%d, $%d, $%d)",
-			i*12+1, i*12+2, i*12+3, i*12+4, i*12+5, i*12+6, i*12+7, i*12+8, i*12+9, i*12+10, i*12+11, i*12+12))
-		valueArgs = append(valueArgs, id)
-		valueArgs = append(valueArgs, e.TransactionId)
-		valueArgs = append(valueArgs, e.ExternalRef)
-		valueArgs = append(valueArgs, acctId)
-		valueArgs = append(valueArgs, entryDate)
-		valueArgs = append(valueArgs, e.Amount)
-		valueArgs = append(valueArgs, e.Type)
-		valueArgs = append(valueArgs, e.Notes)
-		valueArgs = append(valueArgs, reversalId)
-		valueArgs = append(valueArgs, e.ManualEntry)
-		valueArgs = append(valueArgs, signature[:])
-		valueArgs = append(valueArgs, tagsJson)
+	for _, d := range debtors {
+		valueStrings, valueArgs = buildStatment(valueStrings, valueArgs, i, rq.Entry, d.AccountNumber, d.Amount.Value)
+		i = i + 1
+	}
+	for _, c := range creditors {
+		valueStrings, valueArgs = buildStatment(valueStrings, valueArgs, i, rq.Entry, c.AccountNumber, c.Amount.Value)
 		i = i + 1
 	}
 	stmt := fmt.Sprintf(sql, strings.Join(valueStrings, ","))
 	log.Printf("%s", stmt)
-	_, err = p.db.Exec(stmt, valueArgs...)
+	_, err := p.db.Exec(stmt, valueArgs...)
 	if err != nil {
 		rs.Status = err.Error()
 		return rs
@@ -89,6 +80,51 @@ func (p *JournalProcessor) postEntry(reqPayLoad []byte) protoreflect.ProtoMessag
 	return rs
 }
 
-func (p *JournalProcessor) validateAccounts(entries []*glaccount.JournalEntry) (map[string]glaccount.GeneralLedgerAccount, error) {
-	return nil, nil
+func validateSumTotal(debtors []*glaccount.Debtor, creditors []*glaccount.Creditor) error {
+
+	if len(debtors) == 0 && len(creditors) == 0 {
+		// TODO: Load the gl debit accounts
+		return errors.New("no debtors or creditors")
+	}
+	var drAmt = 0.0
+	var crAmt = 0.0
+	for _, d := range debtors {
+		if d.Amount == nil || d.Amount.Value <= 0 {
+			return errors.New("invalid_debit_amount")
+		}
+		drAmt = drAmt + d.Amount.Value
+	}
+	for _, c := range creditors {
+		if c.Amount == nil || c.Amount.Value <= 0 {
+			return errors.New("invalid_credit_amount")
+		}
+		crAmt = crAmt + c.Amount.Value
+	}
+	if drAmt != crAmt {
+		return errors.New("debits_credits_mismatch")
+	}
+	return nil
+}
+
+func buildStatment(valueStrings []string, valueArgs []interface{}, i int, e *glaccount.JournalEntry, acctNumber string, amount float64) ([]string, []interface{}) {
+	id, _ := uuid.NewUUID()
+	reversalId := util.ToUuid(e.ReversalId)
+	signature := sha256.Sum256([]byte(fmt.Sprintf("%s.%s.%s.%g.%s", id, acctNumber, e.TransactionId, amount, e.Type)))
+	tagsJson, _ := json.Marshal(e.Tags)
+	entryDate, _ := time.Parse("20060102", e.EntryDate)
+	valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d,$%d, $%d, $%d,$%d, $%d, $%d,$%d, $%d, $%d)",
+		i*12+1, i*12+2, i*12+3, i*12+4, i*12+5, i*12+6, i*12+7, i*12+8, i*12+9, i*12+10, i*12+11, i*12+12))
+	valueArgs = append(valueArgs, id)
+	valueArgs = append(valueArgs, e.TransactionId)
+	valueArgs = append(valueArgs, e.ExternalRef)
+	valueArgs = append(valueArgs, acctNumber)
+	valueArgs = append(valueArgs, entryDate)
+	valueArgs = append(valueArgs, amount)
+	valueArgs = append(valueArgs, e.Type)
+	valueArgs = append(valueArgs, e.Notes)
+	valueArgs = append(valueArgs, reversalId)
+	valueArgs = append(valueArgs, e.ManualEntry)
+	valueArgs = append(valueArgs, signature[:])
+	valueArgs = append(valueArgs, tagsJson)
+	return valueStrings, valueArgs
 }

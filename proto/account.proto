@@ -4,15 +4,16 @@ option go_package = "achuala.in/ledger/glaccount;glaccount";
 
 message GeneralLedgerAccount {
     string id = 1;
-    string code = 2;
-    string parentId = 3;
-    string organizationId = 4;
-    string description = 5;
-    string type = 6;
-    bool disabled = 7;
-    bool allowManualEntries = 8;
-    string usage = 9;
-    map<string, string> tags = 10;
+    string number = 2;
+    string code = 3;
+    string parentId = 4;
+    string organizationId = 5;
+    string description = 6;
+    string type = 7;
+    bool disabled = 8;
+    bool allowManualEntries = 9;
+    string usage = 10;
+    map<string, string> tags = 11;
 }
 
 message GetGLAByIdRq {

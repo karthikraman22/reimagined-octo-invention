@@ -1,0 +1,9 @@
+syntax="proto3";
+
+option go_package = "achuala.in/ledger/glaccount;glaccount";
+
+
+message Money {
+    string currency = 1; // ISO4217, 3 letter currency code such as "USD" or "EUR".
+    double value = 2;    // double amount 
+}

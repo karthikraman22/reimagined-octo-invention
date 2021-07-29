@@ -40,8 +40,8 @@ func (p *AccountProcessor) createNewAccount(reqPayLoad []byte) protoreflect.Prot
 		return rs
 	}
 
-	sql := `INSERT INTO gl_account(id, code, description, parent_id, org_id, type, usage, 
-			disabled, allow_manual_entries, tags) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`
+	sql := `INSERT INTO gl_account(id, number, code, description, parent_id, org_id, type, usage, 
+			disabled, allow_manual_entries, tags) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`
 	stmt, err := p.db.Prepare(sql)
 	if err != nil {
 		rs.Status = err.Error()
@@ -52,7 +52,7 @@ func (p *AccountProcessor) createNewAccount(reqPayLoad []byte) protoreflect.Prot
 	parentId := u.ToUuid(rq.AcctDetails.ParentId)
 	tagsJson, _ := json.Marshal(rq.AcctDetails.Tags)
 	orgId := u.ToUuid(rq.AcctDetails.OrganizationId)
-	_, err = stmt.Exec(newAcctId, rq.AcctDetails.Code,
+	_, err = stmt.Exec(newAcctId, rq.AcctDetails.Number, rq.AcctDetails.Code,
 		rq.AcctDetails.Description, parentId,
 		orgId, rq.AcctDetails.Type, rq.AcctDetails.Usage,
 		rq.AcctDetails.Disabled, rq.AcctDetails.AllowManualEntries, tagsJson)
@@ -70,6 +70,6 @@ func (p *AccountProcessor) getAccountById(reqPayLoad []byte) protoreflect.ProtoM
 	if err := proto.Unmarshal(reqPayLoad, req); err != nil {
 		return nil
 	}
-	acc := &glaccount.GeneralLedgerAccount{Id: uuid.New().String(), Code: req.Id}
+	acc := &glaccount.GeneralLedgerAccount{Id: uuid.New().String()}
 	return &glaccount.GetGLAByIdRs{AcctDetails: acc, Status: "0"}
 }

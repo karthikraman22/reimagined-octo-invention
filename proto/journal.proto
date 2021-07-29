@@ -1,26 +1,40 @@
 syntax = "proto3";
 
+import "common.proto";
+
 option go_package = "achuala.in/ledger/glaccount;glaccount";
+
+message  Debtor {
+    string accountNumber  = 1;
+    Money amount = 2; 
+}
+
+message  Creditor {
+    string accountNumber  = 1;
+    Money amount = 2; 
+}
 
 message JournalEntry {
     string id = 1;
     string transactionId = 2;
     string externalRef = 3;
-    string entryDate = 4;
-    string accountId = 5;
-    string notes = 6;
-    double amount = 7;
-    string type = 8;
-    string reversalId = 9;
-    bool manualEntry = 10;
-    string signature = 11;    
-    map<string, string> tags = 12; 
+    string paymentId = 4;
+    string entryDate = 5;
+    repeated Debtor debtors = 6;
+    repeated Creditor creditors = 7;
+    string notes = 8;
+    string type = 9;
+    string reversalId = 10;
+    bool manualEntry = 11;
+    string signature = 12;    
+    map<string, string> tags = 13; 
 }
 
 message PostJournalEntryRq {
-    repeated JournalEntry entries = 1;
+    JournalEntry entry = 1;
 }
 
 message PostJournalEntryRs {
     string status = 1;
+    string journalId = 2;
 }
