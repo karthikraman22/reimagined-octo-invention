@@ -2,6 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: ledger-config
+  namespace: ledger
 data: 
   conf.yaml: |-
     application:
